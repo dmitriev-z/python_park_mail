@@ -28,7 +28,7 @@ def move_car(data, count, train_from, train_to):
             train_cars_count = len(train['cars'])
             if train_cars_count >= count:
                 for i in range(count):
-                    moving_cars.incert(0, train['cars'].pop())
+                    moving_cars.insert(0, train['cars'].pop())
             else:
                 return False
     if not moving_cars:
