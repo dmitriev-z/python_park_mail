@@ -68,7 +68,7 @@ def parse(
                 continue
             if ignore_files:
                 file_pattern = re.compile(r'\.[a-z]*$')
-                if file_pattern.findall(parsed_log['request']['url_path']):
+                if file_pattern.search(parsed_log['request']['url_path']):
                     continue
             if ignore_urls:
                 url = parsed_log['request']['host'] + parsed_log['request']['url_path']
