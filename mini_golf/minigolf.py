@@ -54,12 +54,16 @@ class Match:
         if not self.finished:
             raise RuntimeError("Match is not complete yet")
         else:
+            if isinstance(self, HitsMatch):
+                is_reversed = False
+            elif isinstance(self, HolesMatch):
+                is_reversed = True
             winners = []
             players_match_scores = {i: 0 for i in range(len(self.players))}
             for players_scores in self._players_scores.values():
                 for player_index in range(len(players_scores)):
                     players_match_scores[player_index] += players_scores[player_index]
-            high_score = sorted(set(players_match_scores.values()))[0]
+            high_score = sorted(set(players_match_scores.values()), reverse=is_reversed)[0]
             for player, player_score in players_match_scores.items():
                 if player_score == high_score:
                     winners.append(self._players[player])
@@ -110,21 +114,6 @@ class HitsMatch(Match):
 
 
 class HolesMatch(Match):
-
-    def get_winners(self):
-        if not self.finished:
-            raise RuntimeError("Match is not complete yet")
-        else:
-            winners = []
-            players_match_scores = {i: 0 for i in range(len(self.players))}
-            for players_scores in self._players_scores.values():
-                for player_index in range(len(players_scores)):
-                    players_match_scores[player_index] += players_scores[player_index]
-            high_score = sorted(set(players_match_scores.values()), reverse=True)[0]
-            for player, player_score in players_match_scores.items():
-                if player_score == high_score:
-                    winners.append(self._players[player])
-            return winners
 
     def _write_result(self, success, current_hole, hitting_player):
         if current_hole is None or hitting_player is None:
