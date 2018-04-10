@@ -54,10 +54,10 @@ class Match:
         if not self.finished:
             raise RuntimeError("Match is not complete yet")
         else:
-            if isinstance(self, HitsMatch):
-                is_reversed = False
-            elif isinstance(self, HolesMatch):
+            if isinstance(self, HolesMatch):
                 is_reversed = True
+            else:
+                is_reversed = False
             winners = []
             players_match_scores = {i: 0 for i in range(len(self.players))}
             for players_scores in self._players_scores.values():
