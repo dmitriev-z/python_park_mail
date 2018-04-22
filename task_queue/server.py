@@ -1,0 +1,239 @@
+import sys
+import socket
+import json
+import random
+import string
+import re
+import signal
+
+from collections import OrderedDict
+from datetime import datetime
+
+
+class ReceiveTimeOut(Exception):
+    pass
+
+
+class Server:
+
+    def __init__(self, port=8080):
+        self.BASE = OrderedDict(json.load(open('queue.json')))
+        self.QUEUES = self.BASE['queues']
+        self.TASKS_IN_WORK = self.BASE['tasks in work']
+        self.TIMEOUT = 60
+        self.BUFFSIZE = 4
+        self.port = port
+        self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.connection.bind(('0.0.0.0', self.port))
+        self.connection.listen(10)
+        self._main()
+
+    def close(self):
+        self.connection.close()
+
+    def __del__(self):
+        self.close()
+
+    def _main(self):
+        while True:
+            current_connection, address = self.connection.accept()
+            self._operate_connection(current_connection)
+
+    @staticmethod
+    def _handler(signum, frame):
+        raise ReceiveTimeOut()
+
+    def _receive_data(self, current_connection):
+        full_received_data = ""
+        while True:
+            signal.signal(signal.SIGALRM, self._handler)
+            if full_received_data:
+                signal.setitimer(signal.ITIMER_REAL, 0.004)
+            try:
+                received_data = current_connection.recv(self.BUFFSIZE).decode()
+            except (ReceiveTimeOut, socket.timeout, UnicodeDecodeError):
+                break
+            else:
+                full_received_data += received_data
+            finally:
+                signal.setitimer(signal.ITIMER_REAL, 0)
+        return full_received_data.rstrip('\n').strip()
+
+    def _operate_connection(self, current_connection):
+        current_connection.settimeout(self.TIMEOUT)
+        full_received_data = self._receive_data(current_connection)
+        command, data = self._parse_shell_data(full_received_data)
+        if not command:
+            self._check_tasks_in_work()
+            return current_connection.close()
+        if command == 'ADD':
+            self._check_tasks_in_work()
+            new_queue_work_id = self._operate_add_command(data)
+            if new_queue_work_id:
+                current_connection.send(bytes('{}\n'.format(new_queue_work_id), 'utf8'))
+            return current_connection.close()
+        elif command == 'GET':
+            self._check_tasks_in_work()
+            received_task = self._operate_get_command(data)
+            if received_task:
+                current_connection.send(bytes('{} {} {}\n'.format(received_task['id'],
+                                                                  received_task['length'],
+                                                                  received_task['data']), 'utf8'))
+            else:
+                current_connection.send(b'NONE\n')
+            return current_connection.close()
+        elif command == 'ACK':
+            self._check_tasks_in_work()
+            response = self._operate_ack_command(data)
+            if response:
+                current_connection.send(b"OK\n")
+            else:
+                current_connection.send(b"NOT_OK\n")
+            return current_connection.close()
+        elif command == 'IN':
+            self._check_tasks_in_work()
+            response = self._operate_in_command(data)
+            if response:
+                current_connection.send(b"YES\n")
+            else:
+                current_connection.send(b"NO\n")
+            return current_connection.close()
+
+    @staticmethod
+    def _random_string():
+        return ''.join(random.choices(list(string.ascii_letters + string.digits), k=32))
+
+    @staticmethod
+    def _parse_shell_data(data):
+        pattern = re.compile(r"^ *(?P<command>[a-zA-Z]*)? *(?P<ext_data>.*)?$")
+        parsed_shell_data = pattern.match(data).groupdict()
+        command = parsed_shell_data['command'].upper() if parsed_shell_data['command'] else None
+        ext_data = parsed_shell_data['ext_data'].split() if parsed_shell_data['ext_data'] else None
+        return command, ext_data
+
+    def _write_data_to_base(self, data):
+        with open('queue.json', 'w') as j:
+            j.write(json.dumps(data))
+        self.BASE = json.load(open('queue.json'))
+        self.QUEUES = self.BASE['queues']
+        self.TASKS_IN_WORK = self.BASE['tasks in work']
+
+    def _operate_add_command(self, data):
+        if not data or len(data) != 3:
+            return
+        queue_name, length, task_data = data
+        try:
+            int(length)
+        except ValueError:
+            return
+        if int(length) > 10 ** 6 or len(task_data) != int(length):
+            return
+        new_queue = OrderedDict()
+        new_queue['name'] = queue_name
+        new_queue['tasks'] = []
+        new_task = OrderedDict()
+        new_task['id'] = self._random_string()
+        new_task['length'] = length
+        new_task['data'] = task_data
+        new_task['state'] = 'in queue'
+        for queue in self.QUEUES:
+            if queue['name'] == new_queue['name']:
+                queue['tasks'].append(new_task)
+                self._write_data_to_base(self.BASE)
+                return new_task['id']
+        new_queue['tasks'].append(new_task)
+        self.QUEUES.append(new_queue)
+        self._write_data_to_base(self.BASE)
+        return new_task['id']
+
+    def _operate_get_command(self, data):
+        if not data or len(data) != 1:
+            return
+        queue_name = data[0]
+        for queue in self.QUEUES:
+            if queue['name'] != queue_name:
+                continue
+            if not queue['tasks']:
+                return
+            for task in queue['tasks']:
+                if task['state'] == 'in progress':
+                    continue
+                task['state'] = 'in progress'
+                new_task_in_work = OrderedDict()
+                new_task_in_work['queue'] = queue_name
+                start_time = datetime.now()
+                new_task_in_work['start_time'] = start_time.strftime("%H:%M:%S %d-%m-%Y")
+                new_task_in_work.update(task)
+                self.TASKS_IN_WORK.append(new_task_in_work)
+                self._write_data_to_base(self.BASE)
+                return task
+        return
+
+    def _operate_ack_command(self, data):
+        if not data or len(data) != 2:
+            return
+        queue_name, task_id = data
+        task_found = False
+        for queue in self.QUEUES:
+            if queue['name'] != queue_name:
+                continue
+            for task in queue['tasks']:
+                if task['id'] != task_id:
+                    continue
+                if task['state'] == 'in progress':
+                    queue['tasks'].remove(task)
+                    task_found = True
+        if not task_found:
+            return
+        for task in self.TASKS_IN_WORK:
+            if task['queue'] == queue_name and task['id'] == task_id:
+                self.TASKS_IN_WORK.remove(task)
+                self._write_data_to_base(self.BASE)
+                return True
+
+    def _operate_in_command(self, data):
+        if not data or len(data) != 2:
+            return
+        queue_name, task_id = data
+        for queue in self.QUEUES:
+            if queue['name'] != queue_name:
+                continue
+            for task in queue['tasks']:
+                if task['id'] != task_id:
+                    continue
+                return True
+        return False
+
+    def _check_tasks_in_work(self):
+        current_time = datetime.now()
+        if not self.TASKS_IN_WORK:
+            return
+        uncompleted_tasks = []
+        for task_in_work in self.TASKS_IN_WORK:
+            task_start_time = datetime.strptime(task_in_work['start_time'], "%H:%M:%S %d-%m-%Y")
+            time_delta = current_time - task_start_time
+            if time_delta.seconds >= 5 * 60:
+                uncompleted_tasks.append(task_in_work)
+                self.TASKS_IN_WORK.remove(task_in_work)
+        for uncompleted_task in uncompleted_tasks:
+            for queue in self.QUEUES:
+                if uncompleted_task['queue'] != queue['name']:
+                    continue
+                for task in queue['tasks']:
+                    if task['id'] != uncompleted_task['id']:
+                        continue
+                    task['state'] = 'in queue'
+                    self._write_data_to_base(self.BASE)
+
+
+if __name__ == "__main__":
+    try:
+        Server(int(sys.argv[1]))
+    except (IndexError, ValueError):
+        Server()
+else:
+    try:
+        Server(int(sys.argv[1]))
+    except (IndexError, ValueError):
+        Server()
