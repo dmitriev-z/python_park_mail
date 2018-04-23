@@ -18,7 +18,7 @@ class ReceiveTimeOut(Exception):
 class Server:
 
     def __init__(self, port=8080):
-        self._preconditions()
+        self.BASE, self.QUEUES, self.TASKS_IN_WORK = self._preconditions()
         self.TIMEOUT = 60
         self.BUFFSIZE = 4
         self.port = port
@@ -41,19 +41,17 @@ class Server:
             current_connection, address = self.connection.accept()
             self._operate_connection(current_connection)
 
-    def _preconditions(self):
+    @staticmethod
+    def _preconditions():
         if not os.path.isfile('queue.json'):
             data = {"queues": [], "tasks in work": []}
             with open('queue.json', 'w') as w:
                 w.write(json.dumps(data))
-            self.BASE = data
-            self.QUEUES = self.BASE['queues']
-            self.TASKS_IN_WORK = self.BASE['tasks in work']
+            return data, data["queues"], data["tasks in work"]
         else:
             with open('queue.json', 'r') as r:
-                self.BASE = OrderedDict(json.loads(r.read()))
-            self.QUEUES = self.BASE['queues']
-            self.TASKS_IN_WORK = self.BASE['tasks in work']
+                data = OrderedDict(json.loads(r.read()))
+            return data, data["queues"], data["tasks in work"]
 
     @staticmethod
     def _handler(signum, frame):
