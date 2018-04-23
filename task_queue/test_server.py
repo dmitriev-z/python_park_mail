@@ -1,3 +1,4 @@
+import os
 import unittest
 import time
 import socket
@@ -9,8 +10,12 @@ from unittest import TestCase
 
 class ServerBaseTest(TestCase):
     def setUp(self):
-        self.save_previous_base_data()
-        self.clear_data_base()
+        if os.path.isfile('queue.json'):
+            self.save_previous_base_data()
+            self.clear_data_base()
+            self.restore = True
+        else:
+            self.restore = False
         self.host = '127.0.0.1'
         self.port = 1234
         self.server = subprocess.Popen(['python3', 'server.py', str(self.port)])
@@ -27,8 +32,11 @@ class ServerBaseTest(TestCase):
             self.previous_data = json.loads(j.read())
 
     def restore_base_data(self):
-        with open('queue.json', 'w') as j:
-            j.write(json.dumps(self.previous_data))
+        if self.restore:
+            with open('queue.json', 'w') as j:
+                j.write(json.dumps(self.previous_data))
+        else:
+            self.clear_data_base()
 
     @staticmethod
     def clear_data_base():
@@ -70,8 +78,12 @@ class ServerBaseTest(TestCase):
 
 class ServerAddCommandTest(TestCase):
     def setUp(self):
-        self.save_previous_base_data()
-        self.clear_data_base()
+        if os.path.isfile('queue.json'):
+            self.save_previous_base_data()
+            self.clear_data_base()
+            self.restore = True
+        else:
+            self.restore = False
         self.host = '127.0.0.1'
         self.port = 1234
         self.server = subprocess.Popen(['python3', 'server.py', str(self.port)])
@@ -88,8 +100,11 @@ class ServerAddCommandTest(TestCase):
             self.previous_data = json.loads(j.read())
 
     def restore_base_data(self):
-        with open('queue.json', 'w') as j:
-            j.write(json.dumps(self.previous_data))
+        if self.restore:
+            with open('queue.json', 'w') as j:
+                j.write(json.dumps(self.previous_data))
+        else:
+            self.clear_data_base()
 
     @staticmethod
     def clear_data_base():
@@ -152,8 +167,12 @@ class ServerAddCommandTest(TestCase):
 
 class ServerGetCommandTest(TestCase):
     def setUp(self):
-        self.save_previous_base_data()
-        self.clear_data_base()
+        if os.path.isfile('queue.json'):
+            self.save_previous_base_data()
+            self.clear_data_base()
+            self.restore = True
+        else:
+            self.restore = False
         self.host = '127.0.0.1'
         self.port = 1234
         self.server = subprocess.Popen(['python3', 'server.py', str(self.port)])
@@ -171,8 +190,11 @@ class ServerGetCommandTest(TestCase):
             self.previous_data = json.loads(j.read())
 
     def restore_base_data(self):
-        with open('queue.json', 'w') as j:
-            j.write(json.dumps(self.previous_data))
+        if self.restore:
+            with open('queue.json', 'w') as j:
+                j.write(json.dumps(self.previous_data))
+        else:
+            self.clear_data_base()
 
     @staticmethod
     def clear_data_base():
@@ -241,8 +263,12 @@ class ServerGetCommandTest(TestCase):
 
 class ServerAckCommandTest(TestCase):
     def setUp(self):
-        self.save_previous_base_data()
-        self.clear_data_base()
+        if os.path.isfile('queue.json'):
+            self.save_previous_base_data()
+            self.clear_data_base()
+            self.restore = True
+        else:
+            self.restore = False
         self.host = '127.0.0.1'
         self.port = 1234
         self.server = subprocess.Popen(['python3', 'server.py', str(self.port)])
@@ -260,8 +286,11 @@ class ServerAckCommandTest(TestCase):
             self.previous_data = json.loads(j.read())
 
     def restore_base_data(self):
-        with open('queue.json', 'w') as j:
-            j.write(json.dumps(self.previous_data))
+        if self.restore:
+            with open('queue.json', 'w') as j:
+                j.write(json.dumps(self.previous_data))
+        else:
+            self.clear_data_base()
 
     @staticmethod
     def clear_data_base():
@@ -332,8 +361,12 @@ class ServerAckCommandTest(TestCase):
 
 class ServerInCommandTest(TestCase):
     def setUp(self):
-        self.save_previous_base_data()
-        self.clear_data_base()
+        if os.path.isfile('queue.json'):
+            self.save_previous_base_data()
+            self.clear_data_base()
+            self.restore = True
+        else:
+            self.restore = False
         self.host = '127.0.0.1'
         self.port = 1234
         self.server = subprocess.Popen(['python3', 'server.py', str(self.port)])
@@ -351,8 +384,11 @@ class ServerInCommandTest(TestCase):
             self.previous_data = json.loads(j.read())
 
     def restore_base_data(self):
-        with open('queue.json', 'w') as j:
-            j.write(json.dumps(self.previous_data))
+        if self.restore:
+            with open('queue.json', 'w') as j:
+                j.write(json.dumps(self.previous_data))
+        else:
+            self.clear_data_base()
 
     @staticmethod
     def clear_data_base():

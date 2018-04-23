@@ -128,7 +128,6 @@ class Server:
     def _write_data_to_base(self, data):
         with open('queue.json', 'w') as j:
             j.write(json.dumps(data))
-        self.BASE = data
 
     def _operate_add_command(self, data):
         if not data or len(data) != 3:
