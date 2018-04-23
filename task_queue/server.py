@@ -1,3 +1,4 @@
+import os
 import sys
 import socket
 import json
@@ -17,17 +18,11 @@ class ReceiveTimeOut(Exception):
 class Server:
 
     def __init__(self, port=8080):
-        self.BASE = OrderedDict(json.load(open('queue.json')))
-        self.QUEUES = self.BASE['queues']
-        self.TASKS_IN_WORK = self.BASE['tasks in work']
+        self._preconditions()
         self.TIMEOUT = 60
         self.BUFFSIZE = 4
         self.port = port
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.connection.bind(('0.0.0.0', self.port))
-        self.connection.listen(10)
-        self._main()
 
     def close(self):
         self.connection.close()
@@ -35,10 +30,30 @@ class Server:
     def __del__(self):
         self.close()
 
+    def run(self):
+        self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.connection.bind(('0.0.0.0', self.port))
+        self.connection.listen(10)
+        self._main()
+
     def _main(self):
         while True:
             current_connection, address = self.connection.accept()
             self._operate_connection(current_connection)
+
+    def _preconditions(self):
+        if not os.path.isfile('queue.json'):
+            data = {"queues": [], "tasks in work": []}
+            with open('queue.json', 'w') as w:
+                w.write(json.dumps(data))
+            self.BASE = data
+            self.QUEUES = self.BASE['queues']
+            self.TASKS_IN_WORK = self.BASE['tasks in work']
+        else:
+            with open('queue.json', 'r') as r:
+                self.BASE = OrderedDict(json.loads(r.read()))
+            self.QUEUES = self.BASE['queues']
+            self.TASKS_IN_WORK = self.BASE['tasks in work']
 
     @staticmethod
     def _handler(signum, frame):
@@ -115,9 +130,7 @@ class Server:
     def _write_data_to_base(self, data):
         with open('queue.json', 'w') as j:
             j.write(json.dumps(data))
-        self.BASE = json.load(open('queue.json'))
-        self.QUEUES = self.BASE['queues']
-        self.TASKS_IN_WORK = self.BASE['tasks in work']
+        self.BASE = data
 
     def _operate_add_command(self, data):
         if not data or len(data) != 3:
@@ -229,11 +242,8 @@ class Server:
 
 if __name__ == "__main__":
     try:
-        Server(int(sys.argv[1]))
+        server = Server(int(sys.argv[1]))
+        server.run()
     except (IndexError, ValueError):
-        Server()
-else:
-    try:
-        Server(int(sys.argv[1]))
-    except (IndexError, ValueError):
-        Server()
+        server = Server()
+        server.run()
