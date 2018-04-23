@@ -34,7 +34,7 @@ class ServerBaseTest(TestCase):
     def restore_base_data(self):
         if self.restore:
             with open('queue.json', 'w') as j:
-                j.write(json.dumps(self.previous_data))
+                j.write(json.dumps(self.previous_data, indent='\t'))
         else:
             self.clear_data_base()
 
@@ -102,7 +102,7 @@ class ServerAddCommandTest(TestCase):
     def restore_base_data(self):
         if self.restore:
             with open('queue.json', 'w') as j:
-                j.write(json.dumps(self.previous_data))
+                j.write(json.dumps(self.previous_data, indent='\t'))
         else:
             self.clear_data_base()
 
@@ -192,7 +192,7 @@ class ServerGetCommandTest(TestCase):
     def restore_base_data(self):
         if self.restore:
             with open('queue.json', 'w') as j:
-                j.write(json.dumps(self.previous_data))
+                j.write(json.dumps(self.previous_data, indent='\t'))
         else:
             self.clear_data_base()
 
@@ -288,7 +288,7 @@ class ServerAckCommandTest(TestCase):
     def restore_base_data(self):
         if self.restore:
             with open('queue.json', 'w') as j:
-                j.write(json.dumps(self.previous_data))
+                j.write(json.dumps(self.previous_data, indent='\t'))
         else:
             self.clear_data_base()
 
@@ -386,7 +386,7 @@ class ServerInCommandTest(TestCase):
     def restore_base_data(self):
         if self.restore:
             with open('queue.json', 'w') as j:
-                j.write(json.dumps(self.previous_data))
+                j.write(json.dumps(self.previous_data, indent='\t'))
         else:
             self.clear_data_base()
 

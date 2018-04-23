@@ -46,7 +46,7 @@ class Server:
         if not os.path.isfile('queue.json'):
             data = {"queues": [], "tasks in work": []}
             with open('queue.json', 'w') as w:
-                w.write(json.dumps(data))
+                w.write(json.dumps(data, indent='\t'))
             return data, data["queues"], data["tasks in work"]
         else:
             with open('queue.json', 'r') as r:
@@ -127,7 +127,7 @@ class Server:
 
     def _write_data_to_base(self, data):
         with open('queue.json', 'w') as j:
-            j.write(json.dumps(data))
+            j.write(json.dumps(data, indent='\t'))
 
     def _operate_add_command(self, data):
         if not data or len(data) != 3:
