@@ -40,7 +40,7 @@ class ServerBaseTest(TestCase):
 
     @staticmethod
     def clear_data_base():
-        clear_data = {"queues": [], "tasks in work": []}
+        clear_data = {"queues": {}, "tasks in work": []}
         with open('queue.json', 'w') as j:
             j.write(json.dumps(clear_data))
 
@@ -108,7 +108,7 @@ class ServerAddCommandTest(TestCase):
 
     @staticmethod
     def clear_data_base():
-        clear_data = {"queues": [], "tasks in work": []}
+        clear_data = {"queues": {}, "tasks in work": []}
         with open('queue.json', 'w') as j:
             j.write(json.dumps(clear_data))
 
@@ -198,7 +198,7 @@ class ServerGetCommandTest(TestCase):
 
     @staticmethod
     def clear_data_base():
-        clear_data = {"queues": [], "tasks in work": []}
+        clear_data = {"queues": {}, "tasks in work": []}
         with open('queue.json', 'w') as j:
             j.write(json.dumps(clear_data))
 
@@ -294,7 +294,7 @@ class ServerAckCommandTest(TestCase):
 
     @staticmethod
     def clear_data_base():
-        clear_data = {"queues": [], "tasks in work": []}
+        clear_data = {"queues": {}, "tasks in work": []}
         with open('queue.json', 'w') as j:
             j.write(json.dumps(clear_data))
 
@@ -392,7 +392,7 @@ class ServerInCommandTest(TestCase):
 
     @staticmethod
     def clear_data_base():
-        clear_data = {"queues": [], "tasks in work": []}
+        clear_data = {"queues": {}, "tasks in work": []}
         with open('queue.json', 'w') as j:
             j.write(json.dumps(clear_data))
 
