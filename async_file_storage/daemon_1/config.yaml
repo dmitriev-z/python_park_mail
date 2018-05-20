@@ -1,0 +1,11 @@
+﻿host: localhost
+port: 8081
+dir: /tmp/async_file_storage/1
+nodes:
+  0:
+      host: localhost
+      port: 8080
+  1:
+      host: localhost
+      port: 8082
+save_from_other_nodes: False
