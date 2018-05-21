@@ -51,7 +51,7 @@ class DatabaseFiller:
 
     def _create_tasks_table(self):
         tasks = """
-            CREATE TABLE tasks(task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE tasks(task_id INTEGER PRIMARY KEY ASC,
             task_name VARCHAR(255),
             status VARCHAR(11),
             worker INTEGER,
@@ -61,7 +61,7 @@ class DatabaseFiller:
 
     def _create_workers_table(self):
         workers = """
-            CREATE TABLE workers(worker_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE workers(worker_id INTEGER PRIMARY KEY ASC,
             first_name VARCHAR(255),
             last_name VARCHAR(255));
             """
