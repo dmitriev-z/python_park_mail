@@ -54,8 +54,8 @@ class DatabaseFiller:
             CREATE TABLE tasks(task_id INTEGER PRIMARY KEY AUTOINCREMENT,
             task_name VARCHAR(255),
             status VARCHAR(11),
-            worker VARCHAR(32),
-            parent_task VARCHAR(32));
+            worker INTEGER,
+            parent_task INTEGER);
             """
         self._cursor.execute(tasks)
 
@@ -68,19 +68,19 @@ class DatabaseFiller:
         self._cursor.execute(workers)
 
     def fill_tasks_table(self):
-        tasks = [{"name": "clean", "status": "in queue", "worker": "", "parent_task": ""},
-                 {"name": "clean bedroom", "status": "in queue", "worker": "", "parent_task": ""},
-                 {"name": "clean bathroom", "status": "in queue", "worker": "", "parent_task": ""},
-                 {"name": "clean kitchen", "status": "in queue", "worker": "", "parent_task": ""},
-                 {"name": "cook cake", "status": "in queue", "worker": "", "parent_task": ""},
-                 {"name": "cook", "status": "in queue", "worker": "", "parent_task": ""},
-                 {"name": "cook dinner", "status": "in queue", "worker": "", "parent_task": ""},
-                 {"name": "cook soup", "status": "in queue", "worker": "", "parent_task": ""},
-                 {"name": "cook meat", "status": "in queue", "worker": "", "parent_task": ""}]
+        tasks = [{"name": "clean", "status": "in queue"},
+                 {"name": "clean bedroom", "status": "in queue"},
+                 {"name": "clean bathroom", "status": "in queue"},
+                 {"name": "clean kitchen", "status": "in queue"},
+                 {"name": "cook cake", "status": "in queue"},
+                 {"name": "cook", "status": "in queue"},
+                 {"name": "cook dinner", "status": "in queue"},
+                 {"name": "cook soup", "status": "in queue"},
+                 {"name": "cook meat", "status": "in queue"}]
         sql_query = """INSERT INTO tasks (task_name, status, worker, parent_task) VALUES """
         for task in tasks:
-            task_name, status, worker, parent_task = task.values()
-            values = """("{}", "{}", "{}", "{}")""".format(task_name, status, worker, parent_task)
+            task_name, status = task.values()
+            values = """("{}", "{}", NULL, NULL)""".format(task_name, status)
             sql_query = sql_query + values + ", "
         sql_query = sql_query.rstrip(", ")
         sql_query += ";"

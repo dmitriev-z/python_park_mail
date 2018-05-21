@@ -28,7 +28,7 @@ class TaskTracker:
                   format(worker_id, first_name, last_name))
 
     def add_new_task(self, task_name: str):
-        sql_query = """INSERT INTO tasks (task_name, status, worker, parent_task) VALUES("{}", "{}", "", "");"""\
+        sql_query = """INSERT INTO tasks (task_name, status, worker, parent_task) VALUES("{}", "{}", NULL, NULL);"""\
             .format(task_name, "in queue")
         self._cursor.execute(sql_query)
         self._connection.commit()
@@ -50,13 +50,13 @@ class TaskTracker:
         print("New worker created!\nWorker id: {}\nWorker first name: {}\nWorker last name: {}\n"
               .format(worker_id, first_name, last_name))
 
-    def take_task_to_work(self, task_id, worker_id):
-        sql_query = """SELECT * FROM tasks WHERE task_id == "{}";""".format(task_id)
+    def take_task_to_work(self, task_id: int, worker_id: int):
+        sql_query = """SELECT * FROM tasks WHERE task_id == {};""".format(task_id)
         self._cursor.execute(sql_query)
         result = self._cursor.fetchall()[0]
         task_id, task_name, status, worker, parent_task = result
         if status == "in queue":
-            sql_query = """UPDATE tasks SET worker = "{}", status = "{}" WHERE task_id == "{}";""" \
+            sql_query = """UPDATE tasks SET worker = {}, status = "{}" WHERE task_id == {};""" \
                 .format(worker_id, "in progress", task_id)
             self._cursor.execute(sql_query)
             self._connection.commit()
@@ -65,13 +65,13 @@ class TaskTracker:
         else:
             print("Task with id '{}' already 'in progress' by worker with id '{}'".format(task_id, worker))
 
-    def finish_task(self, task_id):
-        sql_query = """SELECT * FROM tasks WHERE task_id == "{}";""".format(task_id)
+    def finish_task(self, task_id: int):
+        sql_query = """SELECT * FROM tasks WHERE task_id == {};""".format(task_id)
         self._cursor.execute(sql_query)
         result = self._cursor.fetchall()[0]
         task_id, task_name, status, worker, parent_task = result
         if status == "in progress":
-            sql_query = """UPDATE tasks SET status = "done" WHERE task_id == "{}";""".format(task_id)
+            sql_query = """UPDATE tasks SET status = "done" WHERE task_id == {};""".format(task_id)
             self._cursor.execute(sql_query)
             self._connection.commit()
             print("Task with id '{}' now marked as 'done'".format(task_id))
@@ -81,8 +81,8 @@ class TaskTracker:
         elif status == "done":
             print("Task is already finished")
 
-    def _operate_nested_tasks(self, parent_task_id, worker_id=None, to_work=False, finish=False):
-        sql_query = """SELECT * FROM tasks WHERE parent_task == "{}";""".format(parent_task_id)
+    def _operate_nested_tasks(self, parent_task_id: int, worker_id=None, to_work=False, finish=False):
+        sql_query = """SELECT * FROM tasks WHERE parent_task == {};""".format(parent_task_id)
         self._cursor.execute(sql_query)
         results = self._cursor.fetchall()
         if not results:
@@ -94,20 +94,20 @@ class TaskTracker:
             elif finish:
                 self.finish_task(child_task_id)
 
-    def get_task_status(self, task_id):
-        sql_query = """SELECT * FROM tasks WHERE task_id == "{}";""".format(task_id)
+    def get_task_status(self, task_id: int):
+        sql_query = """SELECT * FROM tasks WHERE task_id == {};""".format(task_id)
         self._cursor.execute(sql_query)
         result = self._cursor.fetchall()[0]
         task_id, task_name, status, worker, parent_task = result
         print("Task with id '{}' is '{}'".format(task_id, status))
 
-    def make_task_nested(self, child_task, parent_task):
-        sql_query = """SELECT * FROM tasks WHERE task_id == "{}";""".format(child_task)
+    def make_task_nested(self, child_task: int, parent_task: int):
+        sql_query = """SELECT * FROM tasks WHERE task_id == {};""".format(child_task)
         self._cursor.execute(sql_query)
         result = self._cursor.fetchall()[0]
         task_id, task_name, status, worker, current_parent_task = result
-        if current_parent_task == "":
-            sql_query = """UPDATE tasks SET parent_task = "{}" WHERE task_id == "{}";"""\
+        if current_parent_task is None:
+            sql_query = """UPDATE tasks SET parent_task = {} WHERE task_id == {};"""\
                 .format(parent_task, child_task)
             self._cursor.execute(sql_query)
             self._connection.commit()
